@@ -6,18 +6,10 @@ import { BookService, SegmentService, TransactionService, CategoryService } from
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Books } from './pages/Books';
-import { 
-  TransactionList, 
-  TransactionForm, 
-  BookForm, 
-  Segments, 
-  SegmentForm, 
-  Categories, 
-  CategoryForm, 
-  Import, 
-  Export, 
-  Settings 
-} from './pages/index';
+import { BookForm } from './pages/BookForm';
+import { Transactions } from './pages/Transactions';
+import { Categories } from './pages/Categories';
+import { Segments } from './pages/Segments';
 
 const bookService = new BookService();
 const segmentService = new SegmentService();
@@ -77,21 +69,12 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/transactions" element={<TransactionList />} />
-            <Route path="/transactions/new" element={<TransactionForm />} />
-            <Route path="/transactions/:id/edit" element={<TransactionForm />} />
+            <Route path="/transactions" element={<Transactions />} />
             <Route path="/books" element={<Books />} />
             <Route path="/books/new" element={<BookForm />} />
             <Route path="/books/:id/edit" element={<BookForm />} />
             <Route path="/segments" element={<Segments />} />
-            <Route path="/segments/new" element={<SegmentForm />} />
-            <Route path="/segments/:id/edit" element={<SegmentForm />} />
             <Route path="/categories" element={<Categories />} />
-            <Route path="/categories/new" element={<CategoryForm />} />
-            <Route path="/categories/:id/edit" element={<CategoryForm />} />
-            <Route path="/import" element={<Import />} />
-            <Route path="/export" element={<Export />} />
-            <Route path="/settings" element={<Settings />} />
           </Routes>
         </Layout>
         <Toaster position="top-right" />
