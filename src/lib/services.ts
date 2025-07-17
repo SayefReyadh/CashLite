@@ -121,7 +121,7 @@ export class TransactionService {
       }
       
       if (filter.categoryIds && filter.categoryIds.length > 0) {
-        query = query.filter(t => t.categoryId && filter.categoryIds!.includes(t.categoryId));
+        query = query.filter(t => !!t.categoryId && filter.categoryIds!.includes(t.categoryId));
       }
       
       if (filter.amountMin !== undefined) {
@@ -136,7 +136,7 @@ export class TransactionService {
         const searchLower = filter.searchText.toLowerCase();
         query = query.filter(t => 
           t.description.toLowerCase().includes(searchLower) ||
-          (t.notes && t.notes.toLowerCase().includes(searchLower))
+          (t.notes ? t.notes.toLowerCase().includes(searchLower) : false)
         );
       }
       
