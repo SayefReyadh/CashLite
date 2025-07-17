@@ -2,7 +2,7 @@ export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
+export const formatCurrency = (amount: number, currency: string = 'BDT'): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency

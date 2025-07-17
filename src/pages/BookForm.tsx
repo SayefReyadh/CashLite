@@ -17,7 +17,7 @@ export const BookForm: React.FC = () => {
     name: '',
     description: '',
     segmentId: '',
-    currency: 'USD',
+    currency: 'BDT',
     color: '#3B82F6',
     icon: 'book'
   });
@@ -108,7 +108,7 @@ export const BookForm: React.FC = () => {
   ];
 
   const currencyOptions = [
-    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'
+    'BDT', 'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'
   ];
 
   if (isLoading) {

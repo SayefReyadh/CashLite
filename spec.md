@@ -224,7 +224,7 @@ const createBook = async (bookData: Partial<Book>) => {
     name: bookData.name!,
     description: bookData.description,
     segmentId: bookData.segmentId,
-    currency: bookData.currency || 'USD',
+    currency: bookData.currency || 'BDT',
     color: bookData.color || '#3b82f6',
     icon: bookData.icon || 'wallet',
     isActive: true,
