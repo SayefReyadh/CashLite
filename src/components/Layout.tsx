@@ -10,13 +10,15 @@ import {
   Download, 
   Settings, 
   Menu,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 import { useStore } from '../store';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Transactions', href: '/transactions', icon: ArrowUpDown },
+  { name: 'Monthly Summary', href: '/monthly-summary', icon: Calendar },
   { name: 'Books', href: '/books', icon: Book },
   { name: 'Segments', href: '/segments', icon: FolderOpen },
   { name: 'Categories', href: '/categories', icon: Tag },

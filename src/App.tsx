@@ -10,6 +10,7 @@ import { BookForm } from './pages/BookForm';
 import { Transactions } from './pages/Transactions';
 import { Categories } from './pages/Categories';
 import { Segments } from './pages/Segments';
+import { MonthlySummary } from './pages/MonthlySummary';
 
 const bookService = new BookService();
 const segmentService = new SegmentService();
@@ -70,6 +71,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/monthly-summary" element={<MonthlySummary />} />
             <Route path="/books" element={<Books />} />
             <Route path="/books/new" element={<BookForm />} />
             <Route path="/books/:id/edit" element={<BookForm />} />
