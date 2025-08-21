@@ -100,3 +100,65 @@ export interface CSVRow {
   'Cash Out': string;
   Balance: string;
 }
+
+// Data Aggregation Types
+export interface CategoryAggregation {
+  categoryId: string;
+  categoryName: string;
+  totalAmount: number;
+  transactionCount: number;
+  averageAmount: number;
+  minAmount: number;
+  maxAmount: number;
+  type: 'income' | 'expense' | 'both';
+  percentage: number;
+}
+
+export interface DailySummary {
+  date: string; // YYYY-MM-DD format
+  totalIncome: number;
+  totalExpense: number;
+  netAmount: number;
+  transactionCount: number;
+  incomeTransactions: number;
+  expenseTransactions: number;
+  topCategories: CategoryAggregation[];
+}
+
+export interface MonthlySummary {
+  year: number;
+  month: number;
+  totalIncome: number;
+  totalExpense: number;
+  netAmount: number;
+  transactionCount: number;
+  incomeTransactions: number;
+  expenseTransactions: number;
+  avgDailyIncome: number;
+  avgDailyExpense: number;
+  categoryBreakdown: CategoryAggregation[];
+  dailySummaries: DailySummary[];
+  biggestIncomeDay: string;
+  biggestExpenseDay: string;
+  daysWithTransactions: number;
+}
+
+export interface AggregationOptions {
+  bookIds?: string[];
+  dateFrom?: Date;
+  dateTo?: Date;
+  groupBy?: 'category' | 'day' | 'month' | 'year';
+  includeInactive?: boolean;
+}
+
+export interface CacheEntry<T> {
+  key: string;
+  data: T;
+  timestamp: number;
+  ttl: number; // time to live in milliseconds
+}
+
+export interface CacheOptions {
+  ttl?: number; // default time to live in milliseconds
+  maxSize?: number; // maximum number of entries to cache
+}

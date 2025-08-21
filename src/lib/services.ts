@@ -1,4 +1,5 @@
 import { db } from './database';
+import { globalCache } from './cache';
 import { Book, Segment, Transaction, Category, FilterOptions, ImportResult, ExportOptions, CSVRow } from '../types';
 import { generateId } from './utils';
 
@@ -167,6 +168,9 @@ export class TransactionService {
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
     
+    // Clear relevant caches
+    this.clearAggregationCaches(transaction.bookId);
+    
     return newTransaction;
   }
 
@@ -178,6 +182,9 @@ export class TransactionService {
     
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
+    
+    // Clear relevant caches
+    this.clearAggregationCaches(transaction.bookId);
   }
 
   async delete(id: string): Promise<void> {
@@ -188,6 +195,9 @@ export class TransactionService {
     
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
+    
+    // Clear relevant caches
+    this.clearAggregationCaches(transaction.bookId);
   }
 
   async getMonthlyStats(bookId: string, year: number, month: number): Promise<{ income: number; expense: number }> {
@@ -211,6 +221,167 @@ export class TransactionService {
       },
       { income: 0, expense: 0 }
     );
+  }
+
+  /**
+   * Enhanced daily summary with caching
+   */
+  async getDailySummary(bookId: string, date: Date): Promise<{ income: number; expense: number; net: number; count: number }> {
+    const cacheKey = `daily-summary:${bookId}:${date.toISOString().split('T')[0]}`;
+    
+    // Try cache first
+    const cached = globalCache.get<{ income: number; expense: number; net: number; count: number }>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
+    const transactions = await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter(t => t.date >= startDate && t.date <= endDate)
+      .toArray();
+
+    const summary = transactions.reduce(
+      (stats, transaction) => {
+        if (transaction.type === 'income') {
+          stats.income += transaction.amount;
+        } else {
+          stats.expense += transaction.amount;
+        }
+        stats.count++;
+        return stats;
+      },
+      { income: 0, expense: 0, net: 0, count: 0 }
+    );
+
+    summary.net = summary.income - summary.expense;
+
+    // Cache for 1 hour
+    globalCache.set(cacheKey, summary, 60 * 60 * 1000);
+
+    return summary;
+  }
+
+  /**
+   * Enhanced monthly summary with more details
+   */
+  async getEnhancedMonthlyStats(
+    bookId: string, 
+    year: number, 
+    month: number
+  ): Promise<{
+    income: number;
+    expense: number;
+    net: number;
+    transactionCount: number;
+    avgDailyIncome: number;
+    avgDailyExpense: number;
+    daysWithTransactions: number;
+    topIncomeCategory: string | null;
+    topExpenseCategory: string | null;
+  }> {
+    const cacheKey = `enhanced-monthly:${bookId}:${year}:${month}`;
+    
+    // Try cache first
+    const cached = globalCache.get<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    const daysInMonth = endDate.getDate();
+
+    const transactions = await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter(t => t.date >= startDate && t.date <= endDate)
+      .toArray();
+
+    // Basic calculations
+    const stats = transactions.reduce(
+      (acc, transaction) => {
+        if (transaction.type === 'income') {
+          acc.income += transaction.amount;
+        } else {
+          acc.expense += transaction.amount;
+        }
+        acc.transactionCount++;
+        return acc;
+      },
+      { income: 0, expense: 0, transactionCount: 0 }
+    );
+
+    // Calculate days with transactions
+    const uniqueDays = new Set(
+      transactions.map(t => t.date.toISOString().split('T')[0])
+    );
+
+    // Find top categories
+    const categoryStats = new Map<string, { income: number; expense: number }>();
+    
+    transactions.forEach(t => {
+      if (t.categoryId) {
+        if (!categoryStats.has(t.categoryId)) {
+          categoryStats.set(t.categoryId, { income: 0, expense: 0 });
+        }
+        const catStat = categoryStats.get(t.categoryId)!;
+        if (t.type === 'income') {
+          catStat.income += t.amount;
+        } else {
+          catStat.expense += t.amount;
+        }
+      }
+    });
+
+    let topIncomeCategory: string | null = null;
+    let topExpenseCategory: string | null = null;
+    let maxIncome = 0;
+    let maxExpense = 0;
+
+    for (const [categoryId, stat] of categoryStats.entries()) {
+      if (stat.income > maxIncome) {
+        maxIncome = stat.income;
+        topIncomeCategory = categoryId;
+      }
+      if (stat.expense > maxExpense) {
+        maxExpense = stat.expense;
+        topExpenseCategory = categoryId;
+      }
+    }
+
+    const result = {
+      income: stats.income,
+      expense: stats.expense,
+      net: stats.income - stats.expense,
+      transactionCount: stats.transactionCount,
+      avgDailyIncome: stats.income / daysInMonth,
+      avgDailyExpense: stats.expense / daysInMonth,
+      daysWithTransactions: uniqueDays.size,
+      topIncomeCategory,
+      topExpenseCategory
+    };
+
+    // Cache for 30 minutes
+    globalCache.set(cacheKey, result, 30 * 60 * 1000);
+
+    return result;
+  }
+
+  /**
+   * Clear aggregation caches when transactions change
+   */
+  private clearAggregationCaches(bookId: string): void {
+    globalCache.invalidatePattern(`daily-summary:${bookId}`);
+    globalCache.invalidatePattern(`enhanced-monthly:${bookId}`);
+    globalCache.invalidatePattern('category-aggregation');
+    globalCache.invalidatePattern('daily-summaries');
+    globalCache.invalidatePattern('monthly-summary');
   }
 }
 
@@ -288,6 +459,11 @@ export class ImportService {
       }
 
       result.success = true;
+      
+      // Clear all caches after bulk import
+      if (result.imported > 0) {
+        globalCache.clear();
+      }
     } catch (error) {
       result.errors.push(`General error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
