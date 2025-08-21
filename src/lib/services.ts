@@ -212,6 +212,92 @@ export class TransactionService {
       { income: 0, expense: 0 }
     );
   }
+
+  async getPeriodStats(bookId: string, startDate: Date, endDate: Date): Promise<{ income: number; expense: number }> {
+    const transactions = await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter(t => t.date >= startDate && t.date <= endDate)
+      .toArray();
+    
+    return transactions.reduce(
+      (stats, transaction) => {
+        if (transaction.type === 'income') {
+          stats.income += transaction.amount;
+        } else {
+          stats.expense += transaction.amount;
+        }
+        return stats;
+      },
+      { income: 0, expense: 0 }
+    );
+  }
+
+  async getTrendData(bookId: string, startDate: Date, endDate: Date): Promise<Array<{ date: string; income: number; expense: number; net: number }>> {
+    const transactions = await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter(t => t.date >= startDate && t.date <= endDate)
+      .toArray();
+
+    // Group transactions by date
+    const dailyData: Record<string, { income: number; expense: number }> = {};
+    
+    transactions.forEach(transaction => {
+      const dateKey = transaction.date.toISOString().split('T')[0];
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = { income: 0, expense: 0 };
+      }
+      
+      if (transaction.type === 'income') {
+        dailyData[dateKey].income += transaction.amount;
+      } else {
+        dailyData[dateKey].expense += transaction.amount;
+      }
+    });
+
+    // Convert to array and sort by date
+    return Object.entries(dailyData)
+      .map(([date, data]) => ({
+        date,
+        income: data.income,
+        expense: data.expense,
+        net: data.income - data.expense
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async getCategoryData(bookId: string, startDate: Date, endDate: Date, type: 'income' | 'expense'): Promise<Array<{ name: string; value: number; color: string }>> {
+    const transactions = await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter(t => t.date >= startDate && t.date <= endDate && t.type === type)
+      .toArray();
+
+    const categories = await new CategoryService().getAll();
+    const categoryData: Record<string, number> = {};
+
+    transactions.forEach(transaction => {
+      const category = categories.find(c => c.id === transaction.categoryId);
+      const categoryName = category?.name || 'Uncategorized';
+      
+      if (!categoryData[categoryName]) {
+        categoryData[categoryName] = 0;
+      }
+      categoryData[categoryName] += transaction.amount;
+    });
+
+    // Import the color utility
+    const { getColorFromString } = await import('../utils');
+
+    return Object.entries(categoryData)
+      .map(([name, value]) => ({
+        name,
+        value,
+        color: getColorFromString(name)
+      }))
+      .sort((a, b) => b.value - a.value);
+  }
 }
 
 export class CategoryService {

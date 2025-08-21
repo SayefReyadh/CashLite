@@ -1,17 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar, BarChart3, PieChart } from 'lucide-react';
 import { useStore } from '../store';
 import { BookService, TransactionService } from '../lib/services';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, getPeriodDates, formatPeriodLabel } from '../lib/utils';
+import type { PeriodType } from '../lib/utils';
 import { Transaction } from '../types';
+import { PeriodSelector } from '../components/PeriodSelector';
+import { TrendChart, CategoryChart } from '../components/Charts';
 
 const bookService = new BookService();
 const transactionService = new TransactionService();
 
 export const Dashboard: React.FC = () => {
   const { currentBook, transactions, categories } = useStore();
-  const [monthlyStats, setMonthlyStats] = useState({ income: 0, expense: 0 });
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('this-month');
+  const [periodStats, setPeriodStats] = useState({ income: 0, expense: 0 });
+  const [trendData, setTrendData] = useState<Array<{ date: string; income: number; expense: number; net: number }>>([]);
+  const [expenseCategoryData, setExpenseCategoryData] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [incomeCategoryData, setIncomeCategoryData] = useState<Array<{ name: string; value: number; color: string }>>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,14 +29,22 @@ export const Dashboard: React.FC = () => {
       try {
         setIsLoading(true);
         
-        // Get current month stats
-        const now = new Date();
-        const stats = await transactionService.getMonthlyStats(
-          currentBook.id,
-          now.getFullYear(),
-          now.getMonth() + 1
-        );
-        setMonthlyStats(stats);
+        // Get period dates
+        const { start, end } = getPeriodDates(selectedPeriod);
+        
+        // Get period stats
+        const stats = await transactionService.getPeriodStats(currentBook.id, start, end);
+        setPeriodStats(stats);
+
+        // Get trend data
+        const trends = await transactionService.getTrendData(currentBook.id, start, end);
+        setTrendData(trends);
+
+        // Get category data
+        const expenseCategories = await transactionService.getCategoryData(currentBook.id, start, end, 'expense');
+        const incomeCategories = await transactionService.getCategoryData(currentBook.id, start, end, 'income');
+        setExpenseCategoryData(expenseCategories);
+        setIncomeCategoryData(incomeCategories);
 
         // Get recent transactions
         const recent = await transactionService.getAll({
@@ -44,7 +59,7 @@ export const Dashboard: React.FC = () => {
     };
 
     loadDashboardData();
-  }, [currentBook]);
+  }, [currentBook, selectedPeriod]);
 
   if (!currentBook) {
     return (
@@ -64,22 +79,54 @@ export const Dashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="animate-pulse">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="animate-pulse space-y-6">
+        {/* Period Selector Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="h-6 bg-gray-200 rounded w-48"></div>
+          <div className="h-8 bg-gray-200 rounded w-32"></div>
+        </div>
+        
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="card p-6">
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+                </div>
+                <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="card p-6">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+          <div className="card p-6">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+
+        {/* Recent Transactions Skeleton */}
         <div className="card p-6">
           <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex justify-between">
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div key={i} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-gray-200 rounded-full"></div>
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-32 mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  </div>
+                </div>
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
               </div>
             ))}
           </div>

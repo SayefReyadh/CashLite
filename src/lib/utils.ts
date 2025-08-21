@@ -150,3 +150,68 @@ export const formatFileSize = (bytes: number): string => {
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
+
+export type PeriodType = 'this-month' | 'last-month' | 'last-3-months' | 'last-6-months' | 'this-year' | 'last-year';
+
+export const getPeriodDates = (period: PeriodType): { start: Date; end: Date } => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  switch (period) {
+    case 'this-month':
+      return {
+        start: new Date(currentYear, currentMonth, 1),
+        end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)
+      };
+    
+    case 'last-month':
+      return {
+        start: new Date(currentYear, currentMonth - 1, 1),
+        end: new Date(currentYear, currentMonth, 0, 23, 59, 59, 999)
+      };
+    
+    case 'last-3-months':
+      return {
+        start: new Date(currentYear, currentMonth - 3, 1),
+        end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)
+      };
+    
+    case 'last-6-months':
+      return {
+        start: new Date(currentYear, currentMonth - 6, 1),
+        end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)
+      };
+    
+    case 'this-year':
+      return {
+        start: new Date(currentYear, 0, 1),
+        end: new Date(currentYear, 11, 31, 23, 59, 59, 999)
+      };
+    
+    case 'last-year':
+      return {
+        start: new Date(currentYear - 1, 0, 1),
+        end: new Date(currentYear - 1, 11, 31, 23, 59, 59, 999)
+      };
+    
+    default:
+      return {
+        start: new Date(currentYear, currentMonth, 1),
+        end: new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)
+      };
+  }
+};
+
+export const formatPeriodLabel = (period: PeriodType): string => {
+  const options: Record<PeriodType, string> = {
+    'this-month': 'This Month',
+    'last-month': 'Last Month',
+    'last-3-months': 'Last 3 Months',
+    'last-6-months': 'Last 6 Months',
+    'this-year': 'This Year',
+    'last-year': 'Last Year',
+  };
+  
+  return options[period];
+};
