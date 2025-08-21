@@ -16,6 +16,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
     "dexie": "^3.2.4",
