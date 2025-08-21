@@ -1,53 +1,133 @@
 import { db } from './database';
 import { Book, Segment, Transaction, Category, FilterOptions, ImportResult, ExportOptions, CSVRow } from '../types';
-import { generateId } from './utils';
+import { generateId, parseDateTime, isValidDate, parseCurrencyAmount, formatDateISO } from './utils';
+
+// Service utilities for error handling and validation
+class ServiceError extends Error {
+  constructor(message: string, public code: string, public details?: any) {
+    super(message);
+    this.name = 'ServiceError';
+  }
+}
+
+const validateId = (id: string, entityName: string): void => {
+  if (!id || typeof id !== 'string') {
+    throw new ServiceError(`Invalid ${entityName} ID`, 'INVALID_ID');
+  }
+};
+
+const validateExists = <T>(entity: T | undefined, entityName: string, id: string): T => {
+  if (!entity) {
+    throw new ServiceError(`${entityName} not found`, 'NOT_FOUND', { id });
+  }
+  return entity;
+};
 
 export class BookService {
   async getAll(): Promise<Book[]> {
-    return await db.books.orderBy('name').toArray();
+    try {
+      return await db.books.orderBy('name').toArray();
+    } catch (error) {
+      throw new ServiceError('Failed to fetch books', 'FETCH_ERROR', { error });
+    }
   }
 
   async getById(id: string): Promise<Book | undefined> {
-    return await db.books.get(id);
+    validateId(id, 'book');
+    try {
+      return await db.books.get(id);
+    } catch (error) {
+      throw new ServiceError('Failed to fetch book', 'FETCH_ERROR', { id, error });
+    }
   }
 
   async create(book: Omit<Book, 'id' | 'createdAt' | 'updatedAt' | 'balance'>): Promise<Book> {
-    const newBook: Book = {
-      ...book,
-      id: generateId(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      balance: 0
-    };
+    if (!book.name || !book.currency) {
+      throw new ServiceError('Book name and currency are required', 'VALIDATION_ERROR');
+    }
     
-    await db.books.add(newBook);
-    return newBook;
+    try {
+      const newBook: Book = {
+        ...book,
+        id: generateId(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        balance: 0
+      };
+      
+      await db.books.add(newBook);
+      return newBook;
+    } catch (error) {
+      throw new ServiceError('Failed to create book', 'CREATE_ERROR', { error });
+    }
   }
 
   async update(id: string, updates: Partial<Book>): Promise<void> {
-    await db.books.update(id, { ...updates, updatedAt: new Date() });
+    validateId(id, 'book');
+    
+    try {
+      const book = await this.getById(id);
+      validateExists(book, 'Book', id);
+      
+      await db.books.update(id, { ...updates, updatedAt: new Date() });
+    } catch (error) {
+      if (error instanceof ServiceError) throw error;
+      throw new ServiceError('Failed to update book', 'UPDATE_ERROR', { id, error });
+    }
   }
 
   async delete(id: string): Promise<void> {
-    await db.books.delete(id);
+    validateId(id, 'book');
+    
+    try {
+      const book = await this.getById(id);
+      validateExists(book, 'Book', id);
+      
+      // Check if book has transactions
+      const transactionsCount = await db.transactions.where('bookId').equals(id).count();
+      if (transactionsCount > 0) {
+        throw new ServiceError('Cannot delete book with transactions', 'CONSTRAINT_ERROR', { 
+          id, 
+          transactionsCount 
+        });
+      }
+      
+      await db.books.delete(id);
+    } catch (error) {
+      if (error instanceof ServiceError) throw error;
+      throw new ServiceError('Failed to delete book', 'DELETE_ERROR', { id, error });
+    }
   }
 
   async getBalance(bookId: string): Promise<number> {
-    const transactions = await db.transactions
-      .where('bookId')
-      .equals(bookId)
-      .toArray();
+    validateId(bookId, 'book');
     
-    return transactions.reduce((total, transaction) => {
-      return transaction.type === 'income' 
-        ? total + transaction.amount 
-        : total - transaction.amount;
-    }, 0);
+    try {
+      const transactions = await db.transactions
+        .where('bookId')
+        .equals(bookId)
+        .toArray();
+      
+      return transactions.reduce((total, transaction) => {
+        return transaction.type === 'income' 
+          ? total + transaction.amount 
+          : total - transaction.amount;
+      }, 0);
+    } catch (error) {
+      throw new ServiceError('Failed to calculate book balance', 'CALCULATION_ERROR', { bookId, error });
+    }
   }
 
   async updateBalance(bookId: string): Promise<void> {
-    const balance = await this.getBalance(bookId);
-    await db.books.update(bookId, { balance });
+    validateId(bookId, 'book');
+    
+    try {
+      const balance = await this.getBalance(bookId);
+      await db.books.update(bookId, { balance });
+    } catch (error) {
+      if (error instanceof ServiceError) throw error;
+      throw new ServiceError('Failed to update book balance', 'UPDATE_ERROR', { bookId, error });
+    }
   }
 }
 
@@ -212,6 +292,63 @@ export class TransactionService {
       { income: 0, expense: 0 }
     );
   }
+
+  async duplicate(transactionId: string, targetBookId?: string): Promise<Transaction> {
+    const original = await db.transactions.get(transactionId);
+    if (!original) {
+      throw new Error('Transaction not found');
+    }
+    
+    const duplicate: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> = {
+      ...original,
+      bookId: targetBookId || original.bookId,
+      originalTransactionId: transactionId,
+      description: `Copy of ${original.description}`
+    };
+    
+    return await this.create(duplicate);
+  }
+
+  async reverse(transactionId: string, targetBookId?: string): Promise<Transaction> {
+    const original = await db.transactions.get(transactionId);
+    if (!original) {
+      throw new Error('Transaction not found');
+    }
+    
+    const reversed: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> = {
+      ...original,
+      bookId: targetBookId || original.bookId,
+      type: original.type === 'income' ? 'expense' : 'income',
+      originalTransactionId: transactionId,
+      isReversed: true,
+      description: `Reversal of ${original.description}`
+    };
+    
+    return await this.create(reversed);
+  }
+
+  async getTransactionsByDateRange(bookId: string, startDate: Date, endDate: Date): Promise<Transaction[]> {
+    return await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter(t => t.date >= startDate && t.date <= endDate)
+      .sortBy('date');
+  }
+
+  async searchTransactions(query: string, bookId?: string): Promise<Transaction[]> {
+    const searchLower = query.toLowerCase();
+    let collection = db.transactions.orderBy('date').reverse();
+    
+    if (bookId) {
+      collection = db.transactions.where('bookId').equals(bookId).reverse();
+    }
+    
+    return await collection.filter(t => 
+      t.description.toLowerCase().includes(searchLower) ||
+      (t.notes ? t.notes.toLowerCase().includes(searchLower) : false) ||
+      t.tags.some(tag => tag.toLowerCase().includes(searchLower))
+    ).toArray();
+  }
 }
 
 export class CategoryService {
@@ -240,7 +377,77 @@ export class CategoryService {
   }
 
   async delete(id: string): Promise<void> {
+    // Check if category is being used by any transactions
+    const transactionsCount = await db.transactions.where('categoryId').equals(id).count();
+    if (transactionsCount > 0) {
+      throw new Error('Cannot delete category that is being used by transactions');
+    }
+    
     await db.categories.delete(id);
+  }
+
+  async getActiveCategories(): Promise<Category[]> {
+    return await db.categories.where('isActive').equals(true).sortBy('name');
+  }
+
+  async getCategoriesByType(type: 'income' | 'expense' | 'both'): Promise<Category[]> {
+    return await db.categories
+      .where('type')
+      .anyOf([type, 'both'])
+      .and(category => category.isActive)
+      .sortBy('name');
+  }
+
+  async getCategoryUsageStats(categoryId: string): Promise<{ transactionCount: number; totalAmount: number }> {
+    const transactions = await db.transactions.where('categoryId').equals(categoryId).toArray();
+    
+    return {
+      transactionCount: transactions.length,
+      totalAmount: transactions.reduce((total, t) => total + t.amount, 0)
+    };
+  }
+
+  async findOrCreateCategory(name: string, type: 'income' | 'expense'): Promise<string> {
+    // Try to find existing category
+    const existing = await db.categories
+      .where('name')
+      .equalsIgnoreCase(name)
+      .and(cat => cat.type === type || cat.type === 'both')
+      .first();
+    
+    if (existing) {
+      return existing.id;
+    }
+    
+    // Create new category
+    const newCategory = await this.create({
+      name,
+      type,
+      color: this.getDefaultCategoryColor(type),
+      icon: this.getDefaultCategoryIcon(name),
+      isDefault: false,
+      isActive: true
+    });
+    
+    return newCategory.id;
+  }
+
+  private getDefaultCategoryColor(type: 'income' | 'expense'): string {
+    return type === 'income' ? '#059669' : '#dc2626';
+  }
+
+  private getDefaultCategoryIcon(categoryName: string): string {
+    const name = categoryName.toLowerCase();
+    
+    if (name.includes('food') || name.includes('dining')) return 'utensils';
+    if (name.includes('transport')) return 'car';
+    if (name.includes('shopping')) return 'shopping-bag';
+    if (name.includes('entertainment')) return 'film';
+    if (name.includes('salary')) return 'briefcase';
+    if (name.includes('freelance')) return 'laptop';
+    if (name.includes('investment')) return 'trending-up';
+    
+    return 'circle';
   }
 }
 
@@ -300,16 +507,14 @@ export class ImportService {
       return null;
     }
 
-    const dateStr = row.Date;
-    const timeStr = row.Time || '00:00';
-    const date = new Date(`${dateStr} ${timeStr}`);
+    const date = parseDateTime(row.Date, row.Time);
 
-    if (isNaN(date.getTime())) {
-      throw new Error(`Invalid date format: ${dateStr} ${timeStr}`);
+    if (!isValidDate(date)) {
+      throw new Error(`Invalid date format: ${row.Date} ${row.Time}`);
     }
 
-    const cashIn = parseFloat(row['Cash In'] || '0');
-    const cashOut = parseFloat(row['Cash Out'] || '0');
+    const cashIn = parseCurrencyAmount(row['Cash In'] || '0');
+    const cashOut = parseCurrencyAmount(row['Cash Out'] || '0');
 
     if (cashIn === 0 && cashOut === 0) {
       return null;
@@ -318,17 +523,50 @@ export class ImportService {
     const type: 'income' | 'expense' = cashIn > 0 ? 'income' : 'expense';
     const amount = type === 'income' ? cashIn : cashOut;
 
+    // Auto-find or create category
+    let categoryId: string | undefined;
+    if (row.Category) {
+      const categoryService = new CategoryService();
+      categoryId = await categoryService.findOrCreateCategory(row.Category, type);
+    }
+
     return {
       bookId,
       type,
       amount,
       description: row.Remark || row.Party || 'Imported transaction',
-      notes: [row.Remark, row.Party, row.Mode].filter(Boolean).join(' | '),
+      notes: this.buildNotes(row),
+      categoryId,
       date,
       isRecurring: false,
-      tags: row.Category ? [row.Category] : [],
+      tags: this.extractTags(row),
       isReversed: false
     };
+  }
+
+  private buildNotes(row: CSVRow): string {
+    const notes: string[] = [];
+    
+    if (row.Party) notes.push(`Party: ${row.Party}`);
+    if (row.Mode) notes.push(`Mode: ${row.Mode}`);
+    if (row.Balance) notes.push(`Balance: ${row.Balance}`);
+    
+    return notes.join('\n');
+  }
+
+  private extractTags(row: CSVRow): string[] {
+    const tags: string[] = [];
+    
+    if (row.Category) tags.push(row.Category);
+    if (row.Mode) tags.push(row.Mode);
+    
+    // Auto-tag based on description
+    const description = (row.Remark || '').toLowerCase();
+    if (description.includes('atm')) tags.push('ATM');
+    if (description.includes('online')) tags.push('Online');
+    if (description.includes('transfer')) tags.push('Transfer');
+    
+    return tags.filter((tag, index, self) => self.indexOf(tag) === index); // Remove duplicates
   }
 }
 
@@ -344,10 +582,14 @@ export class ExportService {
     const categories = await new CategoryService().getAll();
     const book = await new BookService().getById(bookId);
 
-    const csvHeader = 'Date,Time,Type,Amount,Description,Notes,Category,Balance\n';
+    if (!book) {
+      throw new Error('Book not found');
+    }
+
+    const csvHeader = 'Date,Time,Type,Amount,Description,Notes,Category,Tags,Balance\n';
     
     let runningBalance = 0;
-    const csvRows = transactions.map(transaction => {
+    const csvRows = transactions.reverse().map(transaction => { // Reverse to get chronological order
       const category = categories.find(c => c.id === transaction.categoryId);
       
       if (transaction.type === 'income') {
@@ -356,7 +598,7 @@ export class ExportService {
         runningBalance -= transaction.amount;
       }
 
-      const date = transaction.date.toISOString().split('T')[0];
+      const date = formatDateISO(transaction.date);
       const time = transaction.date.toTimeString().split(' ')[0];
       
       return [
@@ -367,10 +609,39 @@ export class ExportService {
         `"${transaction.description.replace(/"/g, '""')}"`,
         `"${(transaction.notes || '').replace(/"/g, '""')}"`,
         category?.name || '',
+        `"${transaction.tags.join(', ')}"`,
         runningBalance.toFixed(2)
       ].join(',');
     });
 
     return csvHeader + csvRows.join('\n');
+  }
+
+  async exportToJSON(bookId: string, options: ExportOptions = {}): Promise<string> {
+    const filter: FilterOptions = {
+      bookIds: [bookId],
+      dateFrom: options.dateFrom,
+      dateTo: options.dateTo
+    };
+
+    const transactions = await new TransactionService().getAll(filter);
+    const categories = await new CategoryService().getAll();
+    const book = await new BookService().getById(bookId);
+
+    const exportData = {
+      book,
+      transactions,
+      categories: categories.filter(c => 
+        transactions.some(t => t.categoryId === c.id)
+      ),
+      exportedAt: new Date().toISOString(),
+      summary: {
+        totalTransactions: transactions.length,
+        totalIncome: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+        totalExpense: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+      }
+    };
+
+    return JSON.stringify(exportData, null, 2);
   }
 }

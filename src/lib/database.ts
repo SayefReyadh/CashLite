@@ -11,6 +11,7 @@ export class CashLiteDB extends Dexie {
   constructor() {
     super('CashLiteDB');
     
+    // Version 1: Initial schema
     this.version(1).stores({
       books: '++id, name, segmentId, currency, isActive, createdAt, updatedAt',
       segments: '++id, name, isActive, createdAt, updatedAt',
@@ -18,6 +19,21 @@ export class CashLiteDB extends Dexie {
       categories: '++id, name, type, isDefault, isActive, createdAt, updatedAt',
       settings: '++id, key, updatedAt'
     });
+    
+    // Future versions can be added here for migrations
+    // Example for future version 2:
+    // this.version(2).stores({
+    //   books: '++id, name, segmentId, currency, isActive, createdAt, updatedAt, archivedAt',
+    //   segments: '++id, name, isActive, createdAt, updatedAt',
+    //   transactions: '++id, bookId, type, amount, date, categoryId, createdAt, updatedAt, isRecurring, recurringId, tags, isReversed, originalTransactionId',
+    //   categories: '++id, name, type, isDefault, isActive, createdAt, updatedAt, parentId',
+    //   settings: '++id, key, updatedAt'
+    // }).upgrade(tx => {
+    //   // Migration logic here
+    //   return tx.books.toCollection().modify(book => {
+    //     book.archivedAt = null;
+    //   });
+    // });
     
     this.on('ready', this.initializeDefaults);
   }
