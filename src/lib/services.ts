@@ -1,6 +1,7 @@
 import { db } from './database';
 import { Book, Segment, Transaction, Category, FilterOptions, ImportResult, ExportOptions, CSVRow } from '../types';
-import { generateId } from './utils';
+import { generateId, formatCurrency } from './utils';
+import jsPDF from 'jspdf';
 
 export class BookService {
   async getAll(): Promise<Book[]> {
@@ -372,5 +373,128 @@ export class ExportService {
     });
 
     return csvHeader + csvRows.join('\n');
+  }
+
+  async exportToPDF(bookId: string, options: ExportOptions = {}): Promise<Blob> {
+    const filter: FilterOptions = {
+      bookIds: [bookId],
+      dateFrom: options.dateFrom,
+      dateTo: options.dateTo
+    };
+
+    const transactions = await new TransactionService().getAll(filter);
+    const categories = await new CategoryService().getAll();
+    const book = await new BookService().getById(bookId);
+
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.text(`Financial Report - ${book?.name || 'Unknown Book'}`, 14, 22);
+    
+    doc.setFontSize(11);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 32);
+    
+    if (options.dateFrom || options.dateTo) {
+      const dateRange = `Period: ${options.dateFrom?.toLocaleDateString() || 'Beginning'} to ${options.dateTo?.toLocaleDateString() || 'Now'}`;
+      doc.text(dateRange, 14, 40);
+    }
+
+    // Summary
+    let totalIncome = 0;
+    let totalExpense = 0;
+    transactions.forEach(t => {
+      if (t.type === 'income') totalIncome += t.amount;
+      else totalExpense += t.amount;
+    });
+
+    doc.setFontSize(12);
+    doc.text('Summary:', 14, 55);
+    doc.setFontSize(10);
+    doc.text(`Total Income: ${formatCurrency(totalIncome, book?.currency || 'USD')}`, 14, 63);
+    doc.text(`Total Expense: ${formatCurrency(totalExpense, book?.currency || 'USD')}`, 14, 71);
+    doc.text(`Net Income: ${formatCurrency(totalIncome - totalExpense, book?.currency || 'USD')}`, 14, 79);
+
+    // Transactions table
+    doc.setFontSize(12);
+    doc.text('Transactions:', 14, 95);
+    
+    // Table headers
+    doc.setFontSize(8);
+    const headers = ['Date', 'Type', 'Amount', 'Description', 'Category'];
+    const colWidths = [25, 20, 25, 80, 40];
+    let startX = 14;
+    
+    headers.forEach((header, i) => {
+      doc.text(header, startX, 105);
+      startX += colWidths[i];
+    });
+
+    // Table rows
+    let yPos = 115;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    transactions.forEach((transaction, index) => {
+      if (yPos > pageHeight - 20) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const category = categories.find(c => c.id === transaction.categoryId);
+      startX = 14;
+      
+      const row = [
+        transaction.date.toLocaleDateString(),
+        transaction.type,
+        formatCurrency(transaction.amount, book?.currency || 'USD'),
+        transaction.description.substring(0, 30) + (transaction.description.length > 30 ? '...' : ''),
+        category?.name || ''
+      ];
+
+      row.forEach((cell, i) => {
+        doc.text(cell, startX, yPos);
+        startX += colWidths[i];
+      });
+
+      yPos += 8;
+    });
+
+    return doc.output('blob');
+  }
+
+  async downloadFile(content: string | Blob, filename: string, type: string): Promise<void> {
+    const blob = typeof content === 'string' 
+      ? new Blob([content], { type }) 
+      : content;
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  async shareFile(content: string | Blob, filename: string, type: string): Promise<boolean> {
+    // Check if Web Share API is available
+    if (navigator.share && typeof content !== 'string') {
+      try {
+        const file = new File([content], filename, { type });
+        await navigator.share({
+          title: 'Financial Report',
+          text: 'Here is your financial report from CashLite',
+          files: [file]
+        });
+        return true;
+      } catch (error) {
+        console.error('Error sharing file:', error);
+      }
+    }
+    
+    // Fallback to download
+    await this.downloadFile(content, filename, type);
+    return false;
   }
 }
