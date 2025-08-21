@@ -13,10 +13,14 @@ interface CategoryFormProps {
   onSave: (category: Category) => void;
 }
 
-const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }) => {
+const CategoryForm: React.FC<CategoryFormProps> = ({
+  category,
+  onClose,
+  onSave
+}) => {
   const [formData, setFormData] = useState({
     name: category?.name || '',
-    type: category?.type || 'both' as 'income' | 'expense' | 'both',
+    type: category?.type || ('both' as 'income' | 'expense' | 'both'),
     color: category?.color || '#3B82F6',
     icon: category?.icon || 'tag'
   });
@@ -24,7 +28,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error('Category name is required');
       return;
@@ -32,7 +36,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
 
     try {
       setIsSubmitting(true);
-      
+
       const categoryData = {
         name: formData.name.trim(),
         type: formData.type,
@@ -43,7 +47,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
       };
 
       let savedCategory: Category;
-      
+
       if (category) {
         await categoryService.update(category.id, categoryData);
         savedCategory = { ...category, ...categoryData, updatedAt: new Date() };
@@ -64,9 +68,18 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
   };
 
   const colorOptions = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
-    '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
-    '#F97316', '#6B7280', '#1F2937', '#7C3AED'
+    '#3B82F6',
+    '#EF4444',
+    '#10B981',
+    '#F59E0B',
+    '#8B5CF6',
+    '#EC4899',
+    '#06B6D4',
+    '#84CC16',
+    '#F97316',
+    '#6B7280',
+    '#1F2937',
+    '#7C3AED'
   ];
 
   return (
@@ -85,7 +98,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Enter category name"
                 required
@@ -98,7 +113,12 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' | 'both' })}
+                onChange={e =>
+                  setFormData({
+                    ...formData,
+                    type: e.target.value as 'income' | 'expense' | 'both'
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="both">Both</option>
@@ -118,7 +138,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ category, onClose, onSave }
                     type="button"
                     onClick={() => setFormData({ ...formData, color })}
                     className={`w-8 h-8 rounded-full border-2 ${
-                      formData.color === color ? 'border-gray-900' : 'border-gray-300'
+                      formData.color === color
+                        ? 'border-gray-900'
+                        : 'border-gray-300'
                     }`}
                     style={{ backgroundColor: color }}
                   />
@@ -153,7 +175,9 @@ export const Categories: React.FC = () => {
   const { categories, setCategories } = useStore();
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | undefined>();
+  const [editingCategory, setEditingCategory] = useState<
+    Category | undefined
+  >();
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -194,7 +218,7 @@ export const Categories: React.FC = () => {
 
   const handleSave = (category: Category) => {
     if (editingCategory) {
-      setCategories(categories.map(c => c.id === category.id ? category : c));
+      setCategories(categories.map(c => (c.id === category.id ? category : c)));
     } else {
       setCategories([...categories, category]);
     }
@@ -208,17 +232,23 @@ export const Categories: React.FC = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'income': return 'text-green-600 bg-green-100';
-      case 'expense': return 'text-red-600 bg-red-100';
-      default: return 'text-blue-600 bg-blue-100';
+      case 'income':
+        return 'text-green-600 bg-green-100';
+      case 'expense':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-blue-600 bg-blue-100';
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'income': return 'Income';
-      case 'expense': return 'Expense';
-      default: return 'Both';
+      case 'income':
+        return 'Income';
+      case 'expense':
+        return 'Expense';
+      default:
+        return 'Both';
     }
   };
 
@@ -235,10 +265,7 @@ export const Categories: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn btn-primary"
-        >
+        <button onClick={() => setShowForm(true)} className="btn btn-primary">
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </button>
@@ -248,10 +275,7 @@ export const Categories: React.FC = () => {
         <div className="text-center py-12 bg-white rounded-lg shadow">
           <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">No categories found</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
+          <button onClick={() => setShowForm(true)} className="btn btn-primary">
             <Plus className="h-4 w-4 mr-2" />
             Add your first category
           </button>
@@ -259,7 +283,7 @@ export const Categories: React.FC = () => {
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-            {categories.map((category) => (
+            {categories.map(category => (
               <div
                 key={category.id}
                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -273,8 +297,12 @@ export const Categories: React.FC = () => {
                       <Tag className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{category.name}</h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(category.type)}`}>
+                      <h3 className="font-medium text-gray-900">
+                        {category.name}
+                      </h3>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(category.type)}`}
+                      >
                         {getTypeLabel(category.type)}
                       </span>
                     </div>

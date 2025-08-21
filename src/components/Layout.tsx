@@ -1,14 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  ArrowUpDown, 
-  Book, 
-  FolderOpen, 
-  Tag, 
-  Upload, 
-  Download, 
-  Settings, 
+import {
+  Home,
+  ArrowUpDown,
+  Book,
+  FolderOpen,
+  Tag,
+  Upload,
+  Download,
+  Settings,
   Menu,
   X
 } from 'lucide-react';
@@ -19,7 +19,7 @@ const navigation = [
   { name: 'Transactions', href: '/transactions', icon: ArrowUpDown },
   { name: 'Books', href: '/books', icon: Book },
   { name: 'Segments', href: '/segments', icon: FolderOpen },
-  { name: 'Categories', href: '/categories', icon: Tag },
+  { name: 'Categories', href: '/categories', icon: Tag }
 ];
 
 interface LayoutProps {
@@ -33,9 +33,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className={`${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      <div
+        className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}
+      >
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -49,13 +51,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <X className="h-6 w-6" />
           </button>
         </div>
-        
+
         <nav className="mt-5 px-2">
           <div className="space-y-1">
-            {navigation.map((item) => {
+            {navigation.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
-              
+
               return (
                 <Link
                   key={item.name}
@@ -69,7 +71,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   <Icon
                     className={`${
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'
+                      isActive
+                        ? 'text-white'
+                        : 'text-gray-400 group-hover:text-gray-500'
                     } mr-3 h-5 w-5`}
                   />
                   {item.name}
@@ -82,7 +86,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Sidebar overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -101,10 +105,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Menu className="h-6 w-6" />
               </button>
               <h1 className="ml-2 text-xl font-semibold text-gray-900">
-                {navigation.find(item => item.href === location.pathname)?.name || 'CashLite'}
+                {navigation.find(item => item.href === location.pathname)
+                  ?.name || 'CashLite'}
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <BookSelector />
             </div>
@@ -113,9 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Main content area */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-          <div className="container mx-auto px-4 py-6">
-            {children}
-          </div>
+          <div className="container mx-auto px-4 py-6">{children}</div>
         </main>
       </div>
     </div>
@@ -127,10 +130,7 @@ const BookSelector: React.FC = () => {
 
   if (books.length === 0) {
     return (
-      <Link
-        to="/books/new"
-        className="btn btn-primary btn-sm"
-      >
+      <Link to="/books/new" className="btn btn-primary btn-sm">
         Create Book
       </Link>
     );
@@ -141,13 +141,13 @@ const BookSelector: React.FC = () => {
       <span className="text-sm text-gray-600">Book:</span>
       <select
         value={currentBook?.id || ''}
-        onChange={(e) => {
+        onChange={e => {
           const book = books.find(b => b.id === e.target.value);
           setCurrentBook(book || null);
         }}
         className="form-input py-1 px-2 text-sm min-w-0 w-32"
       >
-        {books.map((book) => (
+        {books.map(book => (
           <option key={book.id} value={book.id}>
             {book.name}
           </option>

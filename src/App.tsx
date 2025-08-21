@@ -1,8 +1,18 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useStore } from './store';
-import { BookService, SegmentService, TransactionService, CategoryService } from './lib/services';
+import {
+  BookService,
+  SegmentService,
+  TransactionService,
+  CategoryService
+} from './lib/services';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Books } from './pages/Books';

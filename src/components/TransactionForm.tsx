@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Calendar, DollarSign, FileText, Tag, Hash } from 'lucide-react';
+import {
+  X,
+  Save,
+  Calendar,
+  DollarSign,
+  FileText,
+  Tag,
+  Hash
+} from 'lucide-react';
 import { useStore } from '../store';
 import { TransactionService, CategoryService } from '../lib/services';
 import { Transaction, Category } from '../types';
@@ -21,12 +29,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 }) => {
   const { currentBook, categories, setCategories } = useStore();
   const [formData, setFormData] = useState({
-    type: transaction?.type || 'expense' as 'income' | 'expense',
+    type: transaction?.type || ('expense' as 'income' | 'expense'),
     amount: transaction?.amount || 0,
     description: transaction?.description || '',
     notes: transaction?.notes || '',
     categoryId: transaction?.categoryId || '',
-    date: transaction?.date ? transaction.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    date: transaction?.date
+      ? transaction.date.toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0],
     tags: transaction?.tags?.join(', ') || ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +63,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!currentBook) {
       toast.error('Please select a book first');
       return;
@@ -71,7 +81,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
     try {
       setIsSubmitting(true);
-      
+
       const transactionData = {
         bookId: currentBook.id,
         type: formData.type,
@@ -81,15 +91,22 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         categoryId: formData.categoryId || undefined,
         date: new Date(formData.date),
         isRecurring: false,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: formData.tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(Boolean),
         isReversed: false
       };
 
       let savedTransaction: Transaction;
-      
+
       if (transaction) {
         await transactionService.update(transaction.id, transactionData);
-        savedTransaction = { ...transaction, ...transactionData, updatedAt: new Date() };
+        savedTransaction = {
+          ...transaction,
+          ...transactionData,
+          updatedAt: new Date()
+        };
         toast.success('Transaction updated successfully');
       } else {
         savedTransaction = await transactionService.create(transactionData);
@@ -106,8 +123,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     }
   };
 
-  const filteredCategories = categories.filter(cat => 
-    cat.type === formData.type || cat.type === 'both'
+  const filteredCategories = categories.filter(
+    cat => cat.type === formData.type || cat.type === 'both'
   );
 
   return (
@@ -136,7 +153,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   name="type"
                   value="income"
                   checked={formData.type === 'income'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      type: e.target.value as 'income' | 'expense'
+                    })
+                  }
                   className="mr-2"
                 />
                 <span className="text-green-600">Income</span>
@@ -147,7 +169,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   name="type"
                   value="expense"
                   checked={formData.type === 'expense'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' })}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      type: e.target.value as 'income' | 'expense'
+                    })
+                  }
                   className="mr-2"
                 />
                 <span className="text-red-600">Expense</span>
@@ -166,7 +193,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               step="0.01"
               min="0"
               value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+              onChange={e =>
+                setFormData({
+                  ...formData,
+                  amount: parseFloat(e.target.value) || 0
+                })
+              }
               className="form-input"
               placeholder="0.00"
               required
@@ -182,7 +214,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <input
               type="text"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="form-input"
               placeholder="Enter description..."
               required
@@ -197,7 +231,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </label>
             <select
               value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, categoryId: e.target.value })
+              }
               className="form-input"
             >
               <option value="">Select category</option>
@@ -218,7 +254,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <input
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={e => setFormData({ ...formData, date: e.target.value })}
               className="form-input"
               required
             />
@@ -233,11 +269,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <input
               type="text"
               value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+              onChange={e => setFormData({ ...formData, tags: e.target.value })}
               className="form-input"
               placeholder="tag1, tag2, tag3..."
             />
-            <p className="text-sm text-gray-500 mt-1">Separate tags with commas</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Separate tags with commas
+            </p>
           </div>
 
           {/* Notes */}
@@ -245,7 +283,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <label className="form-label">Notes</label>
             <textarea
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
               className="form-input"
               rows={3}
               placeholder="Additional notes..."

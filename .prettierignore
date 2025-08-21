@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist/
+build/
+
+# Generated files
+*.log
+*.lockb
+
+# Configuration files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env*
+
+# Coverage
+coverage/
+
+# PWA service worker
+public/sw.js
+public/workbox-*.js

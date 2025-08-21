@@ -1,5 +1,14 @@
 import { db } from './database';
-import { Book, Segment, Transaction, Category, FilterOptions, ImportResult, ExportOptions, CSVRow } from '../types';
+import {
+  Book,
+  Segment,
+  Transaction,
+  Category,
+  FilterOptions,
+  ImportResult,
+  ExportOptions,
+  CSVRow
+} from '../types';
 import { generateId } from './utils';
 
 export class BookService {
@@ -11,7 +20,9 @@ export class BookService {
     return await db.books.get(id);
   }
 
-  async create(book: Omit<Book, 'id' | 'createdAt' | 'updatedAt' | 'balance'>): Promise<Book> {
+  async create(
+    book: Omit<Book, 'id' | 'createdAt' | 'updatedAt' | 'balance'>
+  ): Promise<Book> {
     const newBook: Book = {
       ...book,
       id: generateId(),
@@ -19,7 +30,7 @@ export class BookService {
       updatedAt: new Date(),
       balance: 0
     };
-    
+
     await db.books.add(newBook);
     return newBook;
   }
@@ -37,10 +48,10 @@ export class BookService {
       .where('bookId')
       .equals(bookId)
       .toArray();
-    
+
     return transactions.reduce((total, transaction) => {
-      return transaction.type === 'income' 
-        ? total + transaction.amount 
+      return transaction.type === 'income'
+        ? total + transaction.amount
         : total - transaction.amount;
     }, 0);
   }
@@ -60,7 +71,9 @@ export class SegmentService {
     return await db.segments.get(id);
   }
 
-  async create(segment: Omit<Segment, 'id' | 'createdAt' | 'updatedAt' | 'totalBalance'>): Promise<Segment> {
+  async create(
+    segment: Omit<Segment, 'id' | 'createdAt' | 'updatedAt' | 'totalBalance'>
+  ): Promise<Segment> {
     const newSegment: Segment = {
       ...segment,
       id: generateId(),
@@ -68,7 +81,7 @@ export class SegmentService {
       updatedAt: new Date(),
       totalBalance: 0
     };
-    
+
     await db.segments.add(newSegment);
     return newSegment;
   }
@@ -84,12 +97,12 @@ export class SegmentService {
   async getTotalBalance(segmentId: string): Promise<number> {
     const books = await db.books.where('segmentId').equals(segmentId).toArray();
     let total = 0;
-    
+
     for (const book of books) {
       const balance = await new BookService().getBalance(book.id);
       total += balance;
     }
-    
+
     return total;
   }
 
@@ -102,51 +115,54 @@ export class SegmentService {
 export class TransactionService {
   async getAll(filter?: FilterOptions): Promise<Transaction[]> {
     let query = db.transactions.orderBy('date').reverse();
-    
+
     if (filter) {
       if (filter.bookIds && filter.bookIds.length > 0) {
         query = query.filter(t => filter.bookIds!.includes(t.bookId));
       }
-      
+
       if (filter.type) {
         query = query.filter(t => t.type === filter.type);
       }
-      
+
       if (filter.dateFrom) {
         query = query.filter(t => t.date >= filter.dateFrom!);
       }
-      
+
       if (filter.dateTo) {
         query = query.filter(t => t.date <= filter.dateTo!);
       }
-      
+
       if (filter.categoryIds && filter.categoryIds.length > 0) {
-        query = query.filter(t => !!t.categoryId && filter.categoryIds!.includes(t.categoryId));
+        query = query.filter(
+          t => !!t.categoryId && filter.categoryIds!.includes(t.categoryId)
+        );
       }
-      
+
       if (filter.amountMin !== undefined) {
         query = query.filter(t => t.amount >= filter.amountMin!);
       }
-      
+
       if (filter.amountMax !== undefined) {
         query = query.filter(t => t.amount <= filter.amountMax!);
       }
-      
+
       if (filter.searchText) {
         const searchLower = filter.searchText.toLowerCase();
-        query = query.filter(t => 
-          t.description.toLowerCase().includes(searchLower) ||
-          (t.notes ? t.notes.toLowerCase().includes(searchLower) : false)
+        query = query.filter(
+          t =>
+            t.description.toLowerCase().includes(searchLower) ||
+            (t.notes ? t.notes.toLowerCase().includes(searchLower) : false)
         );
       }
-      
+
       if (filter.tags && filter.tags.length > 0) {
-        query = query.filter(t => 
+        query = query.filter(t =>
           filter.tags!.some(tag => t.tags.includes(tag))
         );
       }
     }
-    
+
     return await query.toArray();
   }
 
@@ -154,28 +170,30 @@ export class TransactionService {
     return await db.transactions.get(id);
   }
 
-  async create(transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<Transaction> {
+  async create(
+    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Transaction> {
     const newTransaction: Transaction = {
       ...transaction,
       id: generateId(),
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     await db.transactions.add(newTransaction);
-    
+
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
-    
+
     return newTransaction;
   }
 
   async update(id: string, updates: Partial<Transaction>): Promise<void> {
     const transaction = await db.transactions.get(id);
     if (!transaction) return;
-    
+
     await db.transactions.update(id, { ...updates, updatedAt: new Date() });
-    
+
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
   }
@@ -183,23 +201,27 @@ export class TransactionService {
   async delete(id: string): Promise<void> {
     const transaction = await db.transactions.get(id);
     if (!transaction) return;
-    
+
     await db.transactions.delete(id);
-    
+
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
   }
 
-  async getMonthlyStats(bookId: string, year: number, month: number): Promise<{ income: number; expense: number }> {
+  async getMonthlyStats(
+    bookId: string,
+    year: number,
+    month: number
+  ): Promise<{ income: number; expense: number }> {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-    
+
     const transactions = await db.transactions
       .where('bookId')
       .equals(bookId)
       .filter(t => t.date >= startDate && t.date <= endDate)
       .toArray();
-    
+
     return transactions.reduce(
       (stats, transaction) => {
         if (transaction.type === 'income') {
@@ -223,14 +245,16 @@ export class CategoryService {
     return await db.categories.get(id);
   }
 
-  async create(category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>): Promise<Category> {
+  async create(
+    category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Category> {
     const newCategory: Category = {
       ...category,
       id: generateId(),
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     await db.categories.add(newCategory);
     return newCategory;
   }
@@ -248,7 +272,7 @@ export class ImportService {
   async importCSV(csvData: string, bookId: string): Promise<ImportResult> {
     const lines = csvData.split('\n').filter(line => line.trim());
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    
+
     const result: ImportResult = {
       success: false,
       imported: 0,
@@ -260,7 +284,7 @@ export class ImportService {
     try {
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        
+
         if (values.length !== headers.length) {
           result.errors.push(`Line ${i + 1}: Invalid number of columns`);
           result.skipped++;
@@ -282,20 +306,27 @@ export class ImportService {
             result.skipped++;
           }
         } catch (error) {
-          result.errors.push(`Line ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          result.errors.push(
+            `Line ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
           result.skipped++;
         }
       }
 
       result.success = true;
     } catch (error) {
-      result.errors.push(`General error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `General error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return result;
   }
 
-  private async parseCSVRow(row: CSVRow, bookId: string): Promise<Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> | null> {
+  private async parseCSVRow(
+    row: CSVRow,
+    bookId: string
+  ): Promise<Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> | null> {
     if (!row.Date || (!row['Cash In'] && !row['Cash Out'])) {
       return null;
     }
@@ -333,7 +364,10 @@ export class ImportService {
 }
 
 export class ExportService {
-  async exportToCSV(bookId: string, options: ExportOptions = {}): Promise<string> {
+  async exportToCSV(
+    bookId: string,
+    options: ExportOptions = {}
+  ): Promise<string> {
     const filter: FilterOptions = {
       bookIds: [bookId],
       dateFrom: options.dateFrom,
@@ -344,12 +378,13 @@ export class ExportService {
     const categories = await new CategoryService().getAll();
     const book = await new BookService().getById(bookId);
 
-    const csvHeader = 'Date,Time,Type,Amount,Description,Notes,Category,Balance\n';
-    
+    const csvHeader =
+      'Date,Time,Type,Amount,Description,Notes,Category,Balance\n';
+
     let runningBalance = 0;
     const csvRows = transactions.map(transaction => {
       const category = categories.find(c => c.id === transaction.categoryId);
-      
+
       if (transaction.type === 'income') {
         runningBalance += transaction.amount;
       } else {
@@ -358,7 +393,7 @@ export class ExportService {
 
       const date = transaction.date.toISOString().split('T')[0];
       const time = transaction.date.toTimeString().split(' ')[0];
-      
+
       return [
         date,
         time,

@@ -10,21 +10,22 @@ export class CashLiteDB extends Dexie {
 
   constructor() {
     super('CashLiteDB');
-    
+
     this.version(1).stores({
       books: '++id, name, segmentId, currency, isActive, createdAt, updatedAt',
       segments: '++id, name, isActive, createdAt, updatedAt',
-      transactions: '++id, bookId, type, amount, date, categoryId, createdAt, updatedAt, isRecurring, recurringId, tags, isReversed',
+      transactions:
+        '++id, bookId, type, amount, date, categoryId, createdAt, updatedAt, isRecurring, recurringId, tags, isReversed',
       categories: '++id, name, type, isDefault, isActive, createdAt, updatedAt',
       settings: '++id, key, updatedAt'
     });
-    
+
     this.on('ready', this.initializeDefaults);
   }
 
   private initializeDefaults = async () => {
     const categoryCount = await this.categories.count();
-    
+
     if (categoryCount === 0) {
       await this.categories.bulkAdd([
         {

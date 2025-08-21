@@ -8,11 +8,16 @@ import { formatCurrency, formatDate } from '../lib/utils';
 const bookService = new BookService();
 
 export const Books: React.FC = () => {
-  const { books, setBooks, removeBook, currentBook, setCurrentBook } = useStore();
+  const { books, setBooks, removeBook, currentBook, setCurrentBook } =
+    useStore();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const handleDelete = async (bookId: string) => {
-    if (!window.confirm('Are you sure you want to delete this book? This action cannot be undone.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this book? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
@@ -20,7 +25,7 @@ export const Books: React.FC = () => {
       setIsDeleting(bookId);
       await bookService.delete(bookId);
       removeBook(bookId);
-      
+
       // If we deleted the current book, set a new one
       if (currentBook?.id === bookId) {
         const remainingBooks = books.filter(b => b.id !== bookId);
@@ -38,10 +43,7 @@ export const Books: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Books</h1>
-        <Link
-          to="/books/new"
-          className="btn btn-primary"
-        >
+        <Link to="/books/new" className="btn btn-primary">
           <Plus className="h-4 w-4 mr-2" />
           New Book
         </Link>
@@ -50,19 +52,20 @@ export const Books: React.FC = () => {
       {books.length === 0 ? (
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No books yet</h3>
-          <p className="text-gray-500 mb-6">Create your first book to start tracking your finances</p>
-          <Link
-            to="/books/new"
-            className="btn btn-primary"
-          >
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No books yet
+          </h3>
+          <p className="text-gray-500 mb-6">
+            Create your first book to start tracking your finances
+          </p>
+          <Link to="/books/new" className="btn btn-primary">
             <Plus className="h-4 w-4 mr-2" />
             Create Book
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {books.map((book) => (
+          {books.map(book => (
             <div
               key={book.id}
               className={`card p-6 ${
@@ -78,7 +81,9 @@ export const Books: React.FC = () => {
                   <div>
                     <h3 className="font-medium text-gray-900">{book.name}</h3>
                     {book.description && (
-                      <p className="text-sm text-gray-500">{book.description}</p>
+                      <p className="text-sm text-gray-500">
+                        {book.description}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -102,9 +107,11 @@ export const Books: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Balance:</span>
-                  <span className={`font-medium ${
-                    book.balance >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <span
+                    className={`font-medium ${
+                      book.balance >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
                     {formatCurrency(book.balance, book.currency)}
                   </span>
                 </div>
@@ -114,7 +121,9 @@ export const Books: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Created:</span>
-                  <span className="text-gray-900">{formatDate(book.createdAt)}</span>
+                  <span className="text-gray-900">
+                    {formatDate(book.createdAt)}
+                  </span>
                 </div>
               </div>
 

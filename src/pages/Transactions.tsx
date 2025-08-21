@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Filter, Search, Download, Upload } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Filter,
+  Search,
+  Download,
+  Upload
+} from 'lucide-react';
 import { useStore } from '../store';
 import { TransactionService, CategoryService } from '../lib/services';
 import { Transaction, FilterOptions } from '../types';
@@ -13,10 +21,14 @@ const categoryService = new CategoryService();
 export const Transactions: React.FC = () => {
   const { currentBook, categories, setCategories } = useStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<
+    Transaction[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
+  const [editingTransaction, setEditingTransaction] = useState<
+    Transaction | undefined
+  >();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterOptions>({});
   const [showFilter, setShowFilter] = useState(false);
@@ -31,7 +43,7 @@ export const Transactions: React.FC = () => {
           transactionService.getAll({ bookIds: [currentBook.id] }),
           categoryService.getAll()
         ]);
-        
+
         setTransactions(transactionsData);
         setFilteredTransactions(transactionsData);
         setCategories(categoriesData);
@@ -53,9 +65,10 @@ export const Transactions: React.FC = () => {
       // Apply search filter
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        filtered = filtered.filter(t => 
-          t.description.toLowerCase().includes(search) ||
-          (t.notes && t.notes.toLowerCase().includes(search))
+        filtered = filtered.filter(
+          t =>
+            t.description.toLowerCase().includes(search) ||
+            (t.notes && t.notes.toLowerCase().includes(search))
         );
       }
 
@@ -65,7 +78,9 @@ export const Transactions: React.FC = () => {
       }
 
       if (filter.categoryIds && filter.categoryIds.length > 0) {
-        filtered = filtered.filter(t => t.categoryId && filter.categoryIds!.includes(t.categoryId));
+        filtered = filtered.filter(
+          t => t.categoryId && filter.categoryIds!.includes(t.categoryId)
+        );
       }
 
       if (filter.dateFrom) {
@@ -112,7 +127,9 @@ export const Transactions: React.FC = () => {
 
   const handleSave = (transaction: Transaction) => {
     if (editingTransaction) {
-      setTransactions(prev => prev.map(t => t.id === transaction.id ? transaction : t));
+      setTransactions(prev =>
+        prev.map(t => (t.id === transaction.id ? transaction : t))
+      );
     } else {
       setTransactions(prev => [transaction, ...prev]);
     }
@@ -138,7 +155,9 @@ export const Transactions: React.FC = () => {
   if (!currentBook) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Please select a book to view transactions</p>
+        <p className="text-gray-500">
+          Please select a book to view transactions
+        </p>
       </div>
     );
   }
@@ -155,10 +174,7 @@ export const Transactions: React.FC = () => {
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
+          <button onClick={() => setShowForm(true)} className="btn btn-primary">
             <Plus className="h-4 w-4 mr-2" />
             Add Transaction
           </button>
@@ -175,7 +191,7 @@ export const Transactions: React.FC = () => {
                 type="text"
                 placeholder="Search transactions..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
@@ -194,10 +210,17 @@ export const Transactions: React.FC = () => {
         {showFilter && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type
+              </label>
               <select
                 value={filter.type || ''}
-                onChange={(e) => setFilter({ ...filter, type: e.target.value as 'income' | 'expense' || undefined })}
+                onChange={e =>
+                  setFilter({
+                    ...filter,
+                    type: (e.target.value as 'income' | 'expense') || undefined
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">All</option>
@@ -207,44 +230,68 @@ export const Transactions: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
               <select
                 value={filter.categoryIds?.[0] || ''}
-                onChange={(e) => setFilter({ 
-                  ...filter, 
-                  categoryIds: e.target.value ? [e.target.value] : undefined 
-                })}
+                onChange={e =>
+                  setFilter({
+                    ...filter,
+                    categoryIds: e.target.value ? [e.target.value] : undefined
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">All</option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                From Date
+              </label>
               <input
                 type="date"
-                value={filter.dateFrom ? filter.dateFrom.toISOString().split('T')[0] : ''}
-                onChange={(e) => setFilter({ 
-                  ...filter, 
-                  dateFrom: e.target.value ? new Date(e.target.value) : undefined 
-                })}
+                value={
+                  filter.dateFrom
+                    ? filter.dateFrom.toISOString().split('T')[0]
+                    : ''
+                }
+                onChange={e =>
+                  setFilter({
+                    ...filter,
+                    dateFrom: e.target.value
+                      ? new Date(e.target.value)
+                      : undefined
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                To Date
+              </label>
               <input
                 type="date"
-                value={filter.dateTo ? filter.dateTo.toISOString().split('T')[0] : ''}
-                onChange={(e) => setFilter({ 
-                  ...filter, 
-                  dateTo: e.target.value ? new Date(e.target.value) : undefined 
-                })}
+                value={
+                  filter.dateTo ? filter.dateTo.toISOString().split('T')[0] : ''
+                }
+                onChange={e =>
+                  setFilter({
+                    ...filter,
+                    dateTo: e.target.value
+                      ? new Date(e.target.value)
+                      : undefined
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -261,7 +308,9 @@ export const Transactions: React.FC = () => {
       ) : filteredTransactions.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow">
           <p className="text-gray-500">
-            {transactions.length === 0 ? 'No transactions found' : 'No transactions match your filters'}
+            {transactions.length === 0
+              ? 'No transactions found'
+              : 'No transactions match your filters'}
           </p>
           {transactions.length === 0 && (
             <button
@@ -297,16 +346,20 @@ export const Transactions: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTransactions.map((transaction) => (
+                {filteredTransactions.map(transaction => (
                   <tr key={transaction.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(transaction.date)}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       <div>
-                        <div className="font-medium">{transaction.description}</div>
+                        <div className="font-medium">
+                          {transaction.description}
+                        </div>
                         {transaction.notes && (
-                          <div className="text-gray-500 text-xs mt-1">{transaction.notes}</div>
+                          <div className="text-gray-500 text-xs mt-1">
+                            {transaction.notes}
+                          </div>
                         )}
                         {transaction.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
@@ -326,11 +379,18 @@ export const Transactions: React.FC = () => {
                       {getCategoryName(transaction.categoryId)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${
-                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                      <span
+                        className={`font-medium ${
+                          transaction.type === 'income'
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}
+                      >
                         {transaction.type === 'income' ? '+' : '-'}
-                        {formatCurrency(transaction.amount, currentBook.currency)}
+                        {formatCurrency(
+                          transaction.amount,
+                          currentBook.currency
+                        )}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

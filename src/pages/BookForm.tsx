@@ -28,11 +28,11 @@ export const BookForm: React.FC = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Load segments
         const segmentsData = await segmentService.getAll();
         setSegments(segmentsData);
-        
+
         // Load book if editing
         if (id) {
           const book = await bookService.getById(id);
@@ -63,7 +63,7 @@ export const BookForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error('Book name is required');
       return;
@@ -71,7 +71,7 @@ export const BookForm: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       const bookData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
@@ -102,13 +102,32 @@ export const BookForm: React.FC = () => {
   };
 
   const colorOptions = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
-    '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
-    '#F97316', '#6B7280', '#1F2937', '#7C3AED'
+    '#3B82F6',
+    '#EF4444',
+    '#10B981',
+    '#F59E0B',
+    '#8B5CF6',
+    '#EC4899',
+    '#06B6D4',
+    '#84CC16',
+    '#F97316',
+    '#6B7280',
+    '#1F2937',
+    '#7C3AED'
   ];
 
   const currencyOptions = [
-    'BDT', 'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'
+    'BDT',
+    'USD',
+    'EUR',
+    'GBP',
+    'JPY',
+    'CAD',
+    'AUD',
+    'CHF',
+    'CNY',
+    'INR',
+    'BRL'
   ];
 
   if (isLoading) {
@@ -145,7 +164,9 @@ export const BookForm: React.FC = () => {
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Enter book name"
                 required
@@ -158,11 +179,15 @@ export const BookForm: React.FC = () => {
               </label>
               <select
                 value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, currency: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {currencyOptions.map(currency => (
-                  <option key={currency} value={currency}>{currency}</option>
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
                 ))}
               </select>
             </div>
@@ -174,7 +199,9 @@ export const BookForm: React.FC = () => {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
               placeholder="Optional description..."
@@ -187,12 +214,16 @@ export const BookForm: React.FC = () => {
             </label>
             <select
               value={formData.segmentId}
-              onChange={(e) => setFormData({ ...formData, segmentId: e.target.value })}
+              onChange={e =>
+                setFormData({ ...formData, segmentId: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">No segment</option>
               {segments.map(segment => (
-                <option key={segment.id} value={segment.id}>{segment.name}</option>
+                <option key={segment.id} value={segment.id}>
+                  {segment.name}
+                </option>
               ))}
             </select>
           </div>
@@ -208,7 +239,9 @@ export const BookForm: React.FC = () => {
                   type="button"
                   onClick={() => setFormData({ ...formData, color })}
                   className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${
-                    formData.color === color ? 'border-gray-900' : 'border-gray-300'
+                    formData.color === color
+                      ? 'border-gray-900'
+                      : 'border-gray-300'
                   }`}
                   style={{ backgroundColor: color }}
                 >

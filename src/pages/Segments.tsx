@@ -15,7 +15,11 @@ interface SegmentFormProps {
   onSave: (segment: Segment) => void;
 }
 
-const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) => {
+const SegmentForm: React.FC<SegmentFormProps> = ({
+  segment,
+  onClose,
+  onSave
+}) => {
   const [formData, setFormData] = useState({
     name: segment?.name || '',
     description: segment?.description || '',
@@ -26,7 +30,7 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error('Segment name is required');
       return;
@@ -34,7 +38,7 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
 
     try {
       setIsSubmitting(true);
-      
+
       const segmentData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
@@ -44,7 +48,7 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
       };
 
       let savedSegment: Segment;
-      
+
       if (segment) {
         await segmentService.update(segment.id, segmentData);
         savedSegment = { ...segment, ...segmentData, updatedAt: new Date() };
@@ -65,9 +69,18 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
   };
 
   const colorOptions = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
-    '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
-    '#F97316', '#6B7280', '#1F2937', '#7C3AED'
+    '#3B82F6',
+    '#EF4444',
+    '#10B981',
+    '#F59E0B',
+    '#8B5CF6',
+    '#EC4899',
+    '#06B6D4',
+    '#84CC16',
+    '#F97316',
+    '#6B7280',
+    '#1F2937',
+    '#7C3AED'
   ];
 
   return (
@@ -86,7 +99,9 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Enter segment name"
                 required
@@ -99,7 +114,9 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={e =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={3}
                 placeholder="Optional description..."
@@ -117,7 +134,9 @@ const SegmentForm: React.FC<SegmentFormProps> = ({ segment, onClose, onSave }) =
                     type="button"
                     onClick={() => setFormData({ ...formData, color })}
                     className={`w-8 h-8 rounded-full border-2 ${
-                      formData.color === color ? 'border-gray-900' : 'border-gray-300'
+                      formData.color === color
+                        ? 'border-gray-900'
+                        : 'border-gray-300'
                     }`}
                     style={{ backgroundColor: color }}
                   />
@@ -160,12 +179,12 @@ export const Segments: React.FC = () => {
         setIsLoading(true);
         const segmentsData = await segmentService.getAll();
         setSegments(segmentsData);
-        
+
         // Update balances for all segments
         for (const segment of segmentsData) {
           await segmentService.updateTotalBalance(segment.id);
         }
-        
+
         // Reload segments with updated balances
         const updatedSegments = await segmentService.getAll();
         setSegments(updatedSegments);
@@ -182,9 +201,11 @@ export const Segments: React.FC = () => {
 
   const handleDelete = async (segmentId: string) => {
     const segmentBooks = books.filter(book => book.segmentId === segmentId);
-    
+
     if (segmentBooks.length > 0) {
-      toast.error('Cannot delete segment with books. Please move or delete books first.');
+      toast.error(
+        'Cannot delete segment with books. Please move or delete books first.'
+      );
       return;
     }
 
@@ -209,7 +230,7 @@ export const Segments: React.FC = () => {
 
   const handleSave = (segment: Segment) => {
     if (editingSegment) {
-      setSegments(segments.map(s => s.id === segment.id ? segment : s));
+      setSegments(segments.map(s => (s.id === segment.id ? segment : s)));
     } else {
       setSegments([...segments, segment]);
     }
@@ -238,10 +259,7 @@ export const Segments: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Segments</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn btn-primary"
-        >
+        <button onClick={() => setShowForm(true)} className="btn btn-primary">
           <Plus className="h-4 w-4 mr-2" />
           Add Segment
         </button>
@@ -254,17 +272,14 @@ export const Segments: React.FC = () => {
           <p className="text-gray-400 text-sm mb-6">
             Segments help you organize your books into groups
           </p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary"
-          >
+          <button onClick={() => setShowForm(true)} className="btn btn-primary">
             <Plus className="h-4 w-4 mr-2" />
             Add your first segment
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {segments.map((segment) => {
+          {segments.map(segment => {
             const segmentBooks = getSegmentBooks(segment.id);
             return (
               <div
@@ -280,9 +295,12 @@ export const Segments: React.FC = () => {
                       <Folder className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{segment.name}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        {segment.name}
+                      </h3>
                       <p className="text-sm text-gray-500">
-                        {segmentBooks.length} book{segmentBooks.length !== 1 ? 's' : ''}
+                        {segmentBooks.length} book
+                        {segmentBooks.length !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -303,11 +321,15 @@ export const Segments: React.FC = () => {
                 </div>
 
                 {segment.description && (
-                  <p className="text-sm text-gray-600 mb-4">{segment.description}</p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {segment.description}
+                  </p>
                 )}
 
                 <div className="mb-4">
-                  <div className="text-sm font-medium text-gray-700 mb-1">Total Balance</div>
+                  <div className="text-sm font-medium text-gray-700 mb-1">
+                    Total Balance
+                  </div>
                   <div className="text-2xl font-bold text-gray-900">
                     {formatCurrency(segment.totalBalance)}
                   </div>
@@ -315,10 +337,15 @@ export const Segments: React.FC = () => {
 
                 {segmentBooks.length > 0 && (
                   <div>
-                    <div className="text-sm font-medium text-gray-700 mb-2">Books</div>
+                    <div className="text-sm font-medium text-gray-700 mb-2">
+                      Books
+                    </div>
                     <div className="space-y-2">
                       {segmentBooks.map(book => (
-                        <div key={book.id} className="flex items-center justify-between text-sm">
+                        <div
+                          key={book.id}
+                          className="flex items-center justify-between text-sm"
+                        >
                           <div className="flex items-center space-x-2">
                             <BookOpen className="h-4 w-4 text-gray-400" />
                             <span className="text-gray-700">{book.name}</span>

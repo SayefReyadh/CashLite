@@ -2,7 +2,10 @@ export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-export const formatCurrency = (amount: number, currency: string = 'BDT'): string => {
+export const formatCurrency = (
+  amount: number,
+  currency: string = 'BDT'
+): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency
@@ -86,21 +89,37 @@ export const sanitizeFileName = (fileName: string): string => {
 
 export const getColorFromString = (str: string): string => {
   const colors = [
-    '#ef4444', '#f59e0b', '#eab308', '#84cc16', '#22c55e',
-    '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
-    '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+    '#ef4444',
+    '#f59e0b',
+    '#eab308',
+    '#84cc16',
+    '#22c55e',
+    '#10b981',
+    '#14b8a6',
+    '#06b6d4',
+    '#0ea5e9',
+    '#3b82f6',
+    '#6366f1',
+    '#8b5cf6',
+    '#a855f7',
+    '#d946ef',
+    '#ec4899',
     '#f43f5e'
   ];
-  
+
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   return colors[Math.abs(hash) % colors.length];
 };
 
-export const downloadFile = (content: string, fileName: string, mimeType: string = 'text/plain'): void => {
+export const downloadFile = (
+  content: string,
+  fileName: string,
+  mimeType: string = 'text/plain'
+): void => {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -115,8 +134,8 @@ export const downloadFile = (content: string, fileName: string, mimeType: string
 export const readFileAsText = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.onerror = (e) => reject(e);
+    reader.onload = e => resolve(e.target?.result as string);
+    reader.onerror = e => reject(e);
     reader.readAsText(file);
   });
 };
@@ -125,14 +144,17 @@ export const groupBy = <T, K extends keyof any>(
   array: T[],
   key: (item: T) => K
 ): Record<K, T[]> => {
-  return array.reduce((groups, item) => {
-    const groupKey = key(item);
-    if (!groups[groupKey]) {
-      groups[groupKey] = [];
-    }
-    groups[groupKey].push(item);
-    return groups;
-  }, {} as Record<K, T[]>);
+  return array.reduce(
+    (groups, item) => {
+      const groupKey = key(item);
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(item);
+      return groups;
+    },
+    {} as Record<K, T[]>
+  );
 };
 
 export const chunk = <T>(array: T[], size: number): T[][] => {
@@ -143,10 +165,10 @@ export const chunk = <T>(array: T[], size: number): T[][] => {
 
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
