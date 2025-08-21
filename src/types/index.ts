@@ -89,6 +89,56 @@ export interface ExportOptions {
   includeBalance?: boolean;
 }
 
+export interface Budget {
+  id: string;
+  name: string;
+  description?: string;
+  bookId: string;
+  categoryId?: string;
+  amount: number;
+  period: 'monthly' | 'quarterly' | 'yearly';
+  startDate: Date;
+  endDate?: Date;
+  alertThreshold?: number; // Percentage (0-100) to trigger alerts
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MonthlyOverview {
+  id: string;
+  bookId: string;
+  year: number;
+  month: number; // 1-12
+  totalIncome: number;
+  totalExpense: number;
+  netIncome: number;
+  openingBalance: number;
+  closingBalance: number;
+  categoryBreakdown: CategorySpending[];
+  budgetComparison?: BudgetComparison[];
+  transactionCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CategorySpending {
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+  transactionCount: number;
+  percentage: number; // Percentage of total spending
+}
+
+export interface BudgetComparison {
+  budgetId: string;
+  budgetName: string;
+  budgetAmount: number;
+  actualAmount: number;
+  percentage: number; // Actual vs Budget percentage
+  isOverBudget: boolean;
+}
+
 export interface CSVRow {
   Date: string;
   Time: string;

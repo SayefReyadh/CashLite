@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Book, Segment, Transaction, Category, Settings } from '../types';
+import { Book, Segment, Transaction, Category, Settings, Budget, MonthlyOverview } from '../types';
 
 export class CashLiteDB extends Dexie {
   books!: Table<Book>;
@@ -7,6 +7,8 @@ export class CashLiteDB extends Dexie {
   transactions!: Table<Transaction>;
   categories!: Table<Category>;
   settings!: Table<Settings>;
+  budgets!: Table<Budget>;
+  monthlyOverviews!: Table<MonthlyOverview>;
 
   constructor() {
     super('CashLiteDB');
@@ -16,7 +18,9 @@ export class CashLiteDB extends Dexie {
       segments: '++id, name, isActive, createdAt, updatedAt',
       transactions: '++id, bookId, type, amount, date, categoryId, createdAt, updatedAt, isRecurring, recurringId, tags, isReversed',
       categories: '++id, name, type, isDefault, isActive, createdAt, updatedAt',
-      settings: '++id, key, updatedAt'
+      settings: '++id, key, updatedAt',
+      budgets: '++id, name, bookId, categoryId, period, amount, isActive, createdAt, updatedAt, startDate, endDate',
+      monthlyOverviews: '++id, bookId, year, month, createdAt, updatedAt'
     });
     
     this.on('ready', this.initializeDefaults);
