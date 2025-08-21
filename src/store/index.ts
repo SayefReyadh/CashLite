@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Book, Segment, Transaction, Category, FilterOptions } from '../types';
 
+interface AppSettings {
+  theme: 'light' | 'dark' | 'system';
+  currency: string;
+  dateFormat: 'dd/MM/yyyy' | 'MM/dd/yyyy' | 'yyyy-MM-dd';
+}
+
 interface AppState {
   // Books
   books: Book[];
@@ -18,6 +24,9 @@ interface AppState {
   
   // Categories
   categories: Category[];
+  
+  // Settings
+  settings: AppSettings;
   
   // UI State
   isLoading: boolean;
@@ -49,6 +58,8 @@ interface AppState {
   updateCategory: (id: string, updates: Partial<Category>) => void;
   removeCategory: (id: string) => void;
   
+  updateSettings: (updates: Partial<AppSettings>) => void;
+  
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -66,6 +77,11 @@ export const useStore = create<AppState>()(
       filteredTransactions: [],
       transactionFilter: {},
       categories: [],
+      settings: {
+        theme: 'light',
+        currency: 'USD',
+        dateFormat: 'dd/MM/yyyy'
+      },
       isLoading: false,
       error: null,
       sidebarOpen: false,
@@ -132,6 +148,11 @@ export const useStore = create<AppState>()(
         categories: state.categories.filter(category => category.id !== id)
       })),
       
+      // Settings actions
+      updateSettings: (updates) => set((state) => ({
+        settings: { ...state.settings, ...updates }
+      })),
+      
       // UI actions
       setLoading: (loading) => set({ isLoading: loading }),
       setError: (error) => set({ error }),
@@ -143,7 +164,8 @@ export const useStore = create<AppState>()(
         currentBook: state.currentBook,
         currentSegment: state.currentSegment,
         transactionFilter: state.transactionFilter,
-        sidebarOpen: state.sidebarOpen
+        sidebarOpen: state.sidebarOpen,
+        settings: state.settings
       })
     }
   )

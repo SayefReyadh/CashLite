@@ -10,6 +10,7 @@ import { BookForm } from './pages/BookForm';
 import { Transactions } from './pages/Transactions';
 import { Categories } from './pages/Categories';
 import { Segments } from './pages/Segments';
+import { Settings } from './pages/index';
 
 const bookService = new BookService();
 const segmentService = new SegmentService();
@@ -75,6 +76,7 @@ function App() {
             <Route path="/books/:id/edit" element={<BookForm />} />
             <Route path="/segments" element={<Segments />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </Layout>
         <Toaster position="top-right" />

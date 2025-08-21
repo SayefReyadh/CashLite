@@ -20,6 +20,7 @@ const navigation = [
   { name: 'Books', href: '/books', icon: Book },
   { name: 'Segments', href: '/segments', icon: FolderOpen },
   { name: 'Categories', href: '/categories', icon: Tag },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 interface LayoutProps {
