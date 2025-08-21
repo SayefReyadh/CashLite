@@ -89,6 +89,26 @@ export interface ExportOptions {
   includeBalance?: boolean;
 }
 
+export interface Budget {
+  id: string;
+  bookId: string;
+  name: string;
+  month: number; // 1-12
+  year: number;
+  totalAmount: number;
+  categoryBudgets: CategoryBudget[];
+  alertThreshold: number; // percentage (e.g., 80 for 80%)
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CategoryBudget {
+  categoryId: string;
+  amount: number;
+  spent: number; // calculated field
+}
+
 export interface CSVRow {
   Date: string;
   Time: string;
