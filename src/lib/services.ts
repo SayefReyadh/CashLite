@@ -212,6 +212,78 @@ export class TransactionService {
       { income: 0, expense: 0 }
     );
   }
+
+  async getCategoryStats(bookId: string, year?: number, month?: number): Promise<{ categoryId: string; name: string; amount: number; type: 'income' | 'expense'; color: string }[]> {
+    let query = db.transactions.where('bookId').equals(bookId);
+    
+    if (year && month) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+      query = query.filter(t => t.date >= startDate && t.date <= endDate);
+    }
+    
+    const transactions = await query.toArray();
+    const categories = await db.categories.toArray();
+    
+    const categoryStats = new Map<string, { amount: number; type: 'income' | 'expense' }>();
+    
+    transactions.forEach(transaction => {
+      const key = transaction.categoryId || 'uncategorized';
+      const existing = categoryStats.get(key) || { amount: 0, type: transaction.type };
+      categoryStats.set(key, {
+        amount: existing.amount + transaction.amount,
+        type: transaction.type
+      });
+    });
+    
+    return Array.from(categoryStats.entries()).map(([categoryId, stats]) => {
+      const category = categories.find(c => c.id === categoryId);
+      return {
+        categoryId,
+        name: category?.name || 'Uncategorized',
+        amount: stats.amount,
+        type: stats.type,
+        color: category?.color || '#6b7280'
+      };
+    });
+  }
+
+  async getSpendingTrend(bookId: string, months: number = 6): Promise<{ month: string; income: number; expense: number; date: Date }[]> {
+    const now = new Date();
+    const trends: { month: string; income: number; expense: number; date: Date }[] = [];
+    
+    for (let i = months - 1; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const transactions = await db.transactions
+        .where('bookId')
+        .equals(bookId)
+        .filter(t => t.date >= date && t.date <= endDate)
+        .toArray();
+      
+      const stats = transactions.reduce(
+        (acc, transaction) => {
+          if (transaction.type === 'income') {
+            acc.income += transaction.amount;
+          } else {
+            acc.expense += transaction.amount;
+          }
+          return acc;
+        },
+        { income: 0, expense: 0 }
+      );
+      
+      trends.push({
+        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        income: stats.income,
+        expense: stats.expense,
+        date
+      });
+    }
+    
+    return trends;
+  }
 }
 
 export class CategoryService {
