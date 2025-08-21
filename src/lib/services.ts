@@ -147,6 +147,15 @@ export class TransactionService {
       }
     }
     
+    // Apply pagination
+    if (filter?.offset !== undefined) {
+      query = query.offset(filter.offset);
+    }
+    
+    if (filter?.limit !== undefined) {
+      query = query.limit(filter.limit);
+    }
+    
     return await query.toArray();
   }
 
@@ -188,6 +197,56 @@ export class TransactionService {
     
     // Update book balance
     await new BookService().updateBalance(transaction.bookId);
+  }
+
+  async count(filter?: FilterOptions): Promise<number> {
+    let query = db.transactions.orderBy('date');
+    
+    if (filter) {
+      if (filter.bookIds && filter.bookIds.length > 0) {
+        query = query.filter(t => filter.bookIds!.includes(t.bookId));
+      }
+      
+      if (filter.type) {
+        query = query.filter(t => t.type === filter.type);
+      }
+      
+      if (filter.dateFrom) {
+        query = query.filter(t => t.date >= filter.dateFrom!);
+      }
+      
+      if (filter.dateTo) {
+        query = query.filter(t => t.date <= filter.dateTo!);
+      }
+      
+      if (filter.categoryIds && filter.categoryIds.length > 0) {
+        query = query.filter(t => !!t.categoryId && filter.categoryIds!.includes(t.categoryId));
+      }
+      
+      if (filter.amountMin !== undefined) {
+        query = query.filter(t => t.amount >= filter.amountMin!);
+      }
+      
+      if (filter.amountMax !== undefined) {
+        query = query.filter(t => t.amount <= filter.amountMax!);
+      }
+      
+      if (filter.searchText) {
+        const searchLower = filter.searchText.toLowerCase();
+        query = query.filter(t => 
+          t.description.toLowerCase().includes(searchLower) ||
+          (t.notes ? t.notes.toLowerCase().includes(searchLower) : false)
+        );
+      }
+      
+      if (filter.tags && filter.tags.length > 0) {
+        query = query.filter(t => 
+          filter.tags!.some(tag => t.tags.includes(tag))
+        );
+      }
+    }
+    
+    return await query.count();
   }
 
   async getMonthlyStats(bookId: string, year: number, month: number): Promise<{ income: number; expense: number }> {

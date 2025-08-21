@@ -72,6 +72,8 @@ export interface FilterOptions {
   categoryIds?: string[];
   searchText?: string;
   tags?: string[];
+  limit?: number;
+  offset?: number;
 }
 
 export interface ImportResult {
